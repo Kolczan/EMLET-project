@@ -10,9 +10,22 @@ import graphviz as gv
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import MinMaxScaler
 import sklearn.metrics
 from sklearn import tree
 from matplotlib.figure import Figure
+from keras.models import Sequential
+from keras.layers import LSTM
+from keras.layers import Dropout
+from keras.layers import Dense
+from keras.layers import TimeDistributed
+
+import tensorflow as tf
+import keras
+from keras import optimizers
+from keras.callbacks import History
+from keras.models import Model
+from keras.layers import Dense, Dropout, LSTM, Input, Activation, concatenate
 
 def grahpviz_test():
     dot = gv.Digraph(comment='The Round Table')
@@ -155,6 +168,63 @@ def emlet_midterm(make_chart):
     print('Starting Date', sd)
     print('Ending Date', ed)
 
+    btc_price['RSI']=ta.rsi(btc_price.Close, length=15)
+    btc_price['EMAF'] = ta.ema(btc_price.Close, length=20)
+    btc_price['EMAM'] = ta.ema(btc_price.Close, length=100)
+    btc_price['EMAS'] = ta.ema(btc_price.Close, length=150)
+    btc_price['Target'] = btc_price['Adj Close']-btc_price.Open
+    btc_price['Target'] = btc_price['Target'].shift(-1)
+    btc_price['TargetClass'] = [1 if btc_price.Target[i] > 0 else 0 for i in range(len(btc_price))]
+
+    btc_price['TargetNextClose'] = btc_price['Adj Close'].shift(-1)
+
+    btc_price.dropna(inplace=True)
+    btc_price.reset_index(inplace=True)
+    btc_price.drop(['Volume', 'Close', 'Date'], axis=1, inplace=True)
+    data_set = btc_price.iloc[:, 0:11]  # .values
+    pd.set_option('display.max_columns', None)
+    sc = MinMaxScaler(feature_range=(0, 1))
+    data_set_scaled = sc.fit_transform(data_set)
+    print(data_set_scaled)
+    # multiple feature from data provided to the model
+    X = []
+    # print(data_set_scaled[0].size)
+    # data_set_scaled=data_set.values
+    backcandles = 30
+    print(data_set_scaled.shape[0])
+    for j in range(8):  # data_set_scaled[0].size):#2 columns are target not X
+        X.append([])
+        for i in range(backcandles, data_set_scaled.shape[0]):  # backcandles+2
+            X[j].append(data_set_scaled[i - backcandles:i, j])
+
+    # move axis from 0 to position 2
+    X = np.moveaxis(X, [0], [2])
+
+    # Erase first elements of y because of backcandles to match X length
+    # del(yi[0:backcandles])
+    # X, yi = np.array(X), np.array(yi)
+    # Choose -1 for last column, classification else -2...
+    X, yi = np.array(X), np.array(data_set_scaled[backcandles:, -1])
+    y = np.reshape(yi, (len(yi), 1))
+    # y=sc.fit_transform(yi)
+    # X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
+    print(X)
+    print(X.shape)
+    print(y)
+    print(y.shape)
+    # split data into train test sets
+    splitlimit = int(len(X) * 0.8)
+    print(splitlimit)
+    X_train, X_test = X[:splitlimit], X[splitlimit:]
+    y_train, y_test = y[:splitlimit], y[splitlimit:]
+    print(X_train.shape)
+    print(X_test.shape)
+    print(y_train.shape)
+    print(y_test.shape)
+    print(y_train)
+
+
+
     if make_chart is True:
         plt.figure(figsize=(12, 6))
         plt.plot(btc_price['Date'], btc_price['Close'], color='r', label='Bitcoin Price')
@@ -170,7 +240,7 @@ def emlet_midterm(make_chart):
 if __name__ == '__main__':
 
     print(sys.version)
-    emlet_midterm(False)
+    emlet_midterm(make_chart=False)
     # emlet()
     # docik = grahpviz_test()
     # print(docik)
