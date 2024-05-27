@@ -2,10 +2,17 @@ import sys
 #put your code here
 import sys
 import pandas as pd
+import pandas_ta as ta
 import numpy as np
 import sklearn as sk
 import matplotlib.pyplot as plt
 import graphviz as gv
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.linear_model import LinearRegression
+import sklearn.metrics
+from sklearn import tree
+from matplotlib.figure import Figure
 
 def grahpviz_test():
     dot = gv.Digraph(comment='The Round Table')
@@ -59,13 +66,6 @@ def emlet():
     # print("\n Test set part set from infr_metrics \n")
     # print(service_testset)
 
-    # put your code here
-    from sklearn.ensemble import RandomForestRegressor
-    from sklearn.tree import DecisionTreeRegressor
-    from sklearn.linear_model import LinearRegression
-    import sklearn.metrics
-    from sklearn import tree
-    from matplotlib.figure import Figure
     errors = []
     for depth in range(1, 10):
         dtg = DecisionTreeRegressor(max_depth=depth, random_state=0)
@@ -133,29 +133,44 @@ def emlet():
     if isinstance(decision_tree_model, DecisionTreeRegressor):
         sklearn.tree.export_graphviz(decision_tree_model, out_file='tree.dot', feature_names=infr_training.columns)
 
-def emlet_midterm():
-    crypto_data = pd.read_csv("data/crypto/BTC.csv")
-    # Display the first few rows of the dataset
-    crypto_data.head()
+def emlet_midterm(make_chart):
+    # crypto_data = pd.read_csv("data/crypto/BTC.csv")
+    # # Display the first few rows of the dataset
+    # crypto_data.head()
+    # 
+    # # Summary statistics of the dataset
+    # crypto_data.describe()
+    # 
+    # # Check for missing values
+    # crypto_data.isnull().sum()
+    # bitcoin_data = crypto_data[crypto_data['ticker'] == 'BTC']
 
-    # Summary statistics of the dataset
-    crypto_data.describe()
+    btc_price = pd.read_csv("data/crypto/BTC-USD (2014-2024).csv")
+    btc_price.head()
+    eth_price = pd.read_csv("data/crypto/ETH-USD (2017-2024).csv")
+    eth_price.head()
+    ## EDA
+    sd = btc_price.iloc[0][0]
+    ed = btc_price.loc[btc_price.index[-1]][0]
+    print('Starting Date', sd)
+    print('Ending Date', ed)
 
-    # Check for missing values
-    crypto_data.isnull().sum()
-    bitcoin_data = crypto_data[crypto_data['ticker'] == 'BTC']
-    plt.figure(figsize=(12, 6))
-    plt.plot(bitcoin_data['date'], bitcoin_data['close'], label='Bitcoin Price')
-    plt.xlabel('Date')
-    plt.ylabel('Price (USD)')
-    plt.title('Bitcoin Price Over Time')
-    plt.legend()
-    plt.show()
+    if make_chart is True:
+        plt.figure(figsize=(12, 6))
+        plt.plot(btc_price['Date'], btc_price['Close'], color='r', label='Bitcoin Price')
+        plt.plot(eth_price['Date'], eth_price['Close'], color='g', label='Ethereum Price')
+        plt.xlabel('Date')
+        plt.ylabel('Price (USD)')
+        plt.title('BTC and ETH price over time in log scale')
+        plt.yscale('log')
+        plt.xticks(btc_price['Date'][::100], rotation='vertical')
+        plt.legend()
+        plt.show()
 
 if __name__ == '__main__':
 
     print(sys.version)
-    emlet_midterm()
+    emlet_midterm(False)
     # emlet()
     # docik = grahpviz_test()
     # print(docik)
